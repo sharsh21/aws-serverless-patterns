@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Detect AWS root account login using EventBridge and notify via SNS
+
+Parameters:
+  AlertEmail:
+    Type: String
+    Description: Email address to receive CRITICAL root login alerts
+
+Resources:
+  RootLoginAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: root-login-critical-alerts
+
+  RootLoginAlertSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref RootLoginAlertTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  RootLoginEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: detect-root-login
+      Description: Detect AWS Root Account Console Login (CRITICAL)
+      EventPattern:
+        source:
+          - aws.signin
+        detail-type:
+          - AWS Console Sign In via CloudTrail
+        detail:
+          userIdentity:
+            type:
+              - Root
+          eventName:
+            - ConsoleLogin
+      State: ENABLED
+      Targets:
+        - Arn: !Ref RootLoginAlertTopic
+          Id: RootLoginSNSTarget
+          InputTransformer:
+            InputPathsMap:
+              account: "$.account"
+              time: "$.time"
+              region: "$.region"
+              sourceIp: "$.detail.sourceIpAddress"
+            InputTemplate: |
+              {
+                "Subject": "🚨 CRITICAL: AWS Root Login Detected"
+                "Message": "CRITICAL SECURITY ALERT\n\nAWS Root Account login detected!\n\nAccount ID: <account>\nRegion: <region>\nTime: <time>\nSource IP: <sourceIp>\n\nImmediate action required:\n1. Verify if this was expected\n2. Rotate root credentials\n3. Enable/verify MFA on root\n4. Review CloudTrail logs\n\n— Automated Security System"
+              }
+
+Outputs:
+  SNSTopicArn:
+    Description: SNS Topic ARN for Root Login Alerts
+    Value: !Ref RootLoginAlertTopic
+
+  EventRuleName:
+    Description: EventBridge Rule Name
+    Value: !Ref RootLoginEventRule

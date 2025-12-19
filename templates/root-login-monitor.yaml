@@ -45,12 +45,9 @@ Resources:
               account: "$.account"
               time: "$.time"
               region: "$.region"
-              sourceIp: "$.detail.sourceIpAddress"
+              sourceIp: "$.detail.sourceIPAddress"
             InputTemplate: |
-              {
-                "Subject": "🚨 CRITICAL: AWS Root Login Detected"
-                "Message": "CRITICAL SECURITY ALERT\n\nAWS Root Account login detected!\n\nAccount ID: <account>\nRegion: <region>\nTime: <time>\nSource IP: <sourceIp>\n\nImmediate action required:\n1. Verify if this was expected\n2. Rotate root credentials\n3. Enable/verify MFA on root\n4. Review CloudTrail logs\n\n— Automated Security System"
-              }
+              "CRITICAL SECURITY ALERT\n\nAWS ROOT ACCOUNT LOGIN DETECTED\n\nAccount ID : <account>\nRegion    : <region>\nTime      : <time>\nSource IP : <sourceIp>\n\nImmediate Actions Required:\n1. Verify if this login was authorized\n2. Rotate root credentials immediately\n3. Enable or verify MFA on root account\n4. Review CloudTrail logs for suspicious activity\n\n-- Automated Security System"
 
 Outputs:
   SNSTopicArn:
